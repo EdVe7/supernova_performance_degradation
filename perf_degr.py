@@ -12,62 +12,55 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Colori e Stili (Ispirazione Supernova) ---
-# Verde scuro (Teal)
-COLOR_PRIMARY = "#0b1d22" 
-# Oro
-COLOR_ACCENT = "#d4af37" 
-# Bianco
-COLOR_TEXT = "#ffffff"
+# ==========================================
+# 1. CONFIGURAZIONE E DESIGN (Oro, Nero, Bianco)
+# ==========================================
+st.set_page_config(page_title="Supernova Mind Lab", page_icon="🧠", layout="wide") 
 
-# Stile custom per Streamlit (solo alcuni elementi, il resto è gestito dal tema)
-# Non è HTML puro, ma si inserisce in Streamlit con st.markdown
-st.markdown(
-    f"""
+# CSS per pulizia totale e design premium
+st.markdown("""
     <style>
-    .reportview-container .main .block-container {{
-        max-width: 800px;
-        padding-top: 2rem;
-        padding-right: 2rem;
-        padding-left: 2rem;
-        padding-bottom: 2rem;
-    }}
-    .sidebar .sidebar-content {{
-        background-color: {COLOR_PRIMARY};
-        color: {COLOR_TEXT};
-    }}
-    h1, h2, h3, h4, h5, h6 {{
-        color: {COLOR_ACCENT};
-        font-family: 'Helvetica Neue', Arial, sans-serif;
-    }}
-    .stButton>button {{
-        background-color: {COLOR_ACCENT};
-        color: {COLOR_PRIMARY};
-        border-radius: 5px;
-        border: none;
-        padding: 10px 20px;
+    #MainMenu {visibility: hidden;} 
+    footer {visibility: hidden;} 
+    header {visibility: hidden;}
+    .stDeployButton {display:none;}
+    .block-container {padding-top: 2rem;}
+    
+    /* Stile per le metriche (KPI) */
+    div[data-testid="metric-container"] {
+        background-color: #ffffff;
+        border: 1px solid #D4AF37; /* Bordo Oro */
+        padding: 5% 10% 5% 10%;
+        border-radius: 0px; /* Squadrato, più formale */
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    /* Stile Mission Box (Nero e Oro) */
+    .vision-box {
+        background: #000000;
+        color: #D4AF37;
+        padding: 20px;
+        border: 2px solid #D4AF37;
+        margin-bottom: 20px;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    
+    /* Bottoni Oro */
+    div.stButton > button:first-child {
+        background-color: #D4AF37;
+        color: #000000;
+        border: None;
         font-weight: bold;
-    }}
-    .stTextInput>div>div>input {{
-        border: 1px solid {COLOR_ACCENT};
-        border-radius: 5px;
-        padding: 8px;
-    }}
+    }
+    div.stButton > button:hover {
+        background-color: #000000;
+        color: #D4AF37;
+        border: 1px solid #D4AF37;
+    }
     </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# --- Logo Supernova (Semplice, da migliorare con un'immagine) ---
-# Per un logo immagine: st.image("path/to/tuo_logo.png", width=100)
-st.markdown(
-    f"<h1 style='text-align: center; color: {COLOR_TEXT}; font-size: 2.5em;'><span style='color: {COLOR_ACCENT};'>Supernova</span> Performance Predictor ⚡</h1>", 
-    unsafe_allow_html=True
-)
-st.markdown(
-    f"<p style='text-align: center; color: {COLOR_ACCENT}; font-size: 1.2em;'><i>Decodifichiamo la fatica, ottimizziamo il picco.</i></p>", 
-    unsafe_allow_html=True
-)
+    """, unsafe_allow_html=True) 
 
 st.write("---")
 
