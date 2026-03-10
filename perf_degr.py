@@ -114,13 +114,17 @@ fig.patch.set_facecolor(COLOR_PRIMARY)
 plt.grid(True, linestyle='--', alpha=0.6, color=COLOR_ACCENT)
 st.pyplot(fig)
 
-# --- Analisi del Punto di Degradaione Critica ---
-st.subheader("Previsione del Punto Critico")
+# Calcoliamo prima i limiti per sicurezza
+minimo_accettabile = deviazione_iniziale + 0.5
+massimo_accettabile = deviazione_iniziale + (degradazione_per_ripetizione * num_ripetizioni)
+proposta_default = deviazione_iniziale + (degradazione_per_ripetizione * num_ripetizioni / 2)
+
+# Il comando Streamlit corretto:
 soglia_degradazione = st.number_input(
-    "Soglia di accettabilità (es. se la deviazione supera X metri, la performance è degradata)", 
-    deviazione_iniziale + 0.5, 
-    deviazione_iniziale + degradazione_per_ripetizione * num_ripetizioni, 
-    deviazione_iniziale + degradazione_per_ripetizione * num_ripetizioni / 2
+    "Soglia di accettabilità (m)",
+    min_value=float(minimo_accettabile),
+    max_value=float(massimo_accettabile),
+    value=float(max(minimo_accettabile, proposta_default)) # <--- Il Fix fondamentale
 )
 
 punto_critico = df[df['Deviazione (m)'] > soglia_degradazione]['Ripetizione'].min()
