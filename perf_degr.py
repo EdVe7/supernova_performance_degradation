@@ -1,136 +1,141 @@
 import streamlit as st
-import pandas as pd
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from fpdf import FPDF
-import os
 
-# --- 1. CONFIGURAZIONE PAGINA & STILE ---
-st.set_page_config(page_title="Supernova - Performance Predictor", layout="centered")
+# Configurazione della pagina Streamlit
+st.set_page_config(
+    page_title="Supernova - Performance Predictor",
+    page_icon="⚡", # Puoi usare un'emoji o un percorso a un'immagine
+    layout="centered", # o "wide"
+    initial_sidebar_state="expanded"
+)
 
-# Colori Brand Supernova
-COLOR_BG = "#0b1d22"    # Teal Scuro
-COLOR_GOLD = "#d4af37"  # Oro
-COLOR_TEXT = "#ffffff"  # Bianco
+# --- Colori e Stili (Ispirazione Supernova) ---
+# Verde scuro (Teal)
+COLOR_PRIMARY = "#0b1d22" 
+# Oro
+COLOR_ACCENT = "#d4af37" 
+# Bianco
+COLOR_TEXT = "#ffffff"
 
-st.markdown(f"""
+# Stile custom per Streamlit (solo alcuni elementi, il resto è gestito dal tema)
+# Non è HTML puro, ma si inserisce in Streamlit con st.markdown
+st.markdown(
+    f"""
     <style>
-    .stApp {{ background-color: {COLOR_BG}; color: {COLOR_TEXT}; }}
-    h1, h2, h3 {{ color: {COLOR_GOLD} !important; }}
-    .stButton>button {{ background-color: {COLOR_GOLD}; color: {COLOR_BG}; font-weight: bold; border: none; }}
-    .stTextInput>div>div>input {{ background-color: #1a2e35; color: white; border: 1px solid {COLOR_GOLD}; }}
+    .reportview-container .main .block-container {{
+        max-width: 800px;
+        padding-top: 2rem;
+        padding-right: 2rem;
+        padding-left: 2rem;
+        padding-bottom: 2rem;
+    }}
+    .sidebar .sidebar-content {{
+        background-color: {COLOR_PRIMARY};
+        color: {COLOR_TEXT};
+    }}
+    h1, h2, h3, h4, h5, h6 {{
+        color: {COLOR_ACCENT};
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+    }}
+    .stButton>button {{
+        background-color: {COLOR_ACCENT};
+        color: {COLOR_PRIMARY};
+        border-radius: 5px;
+        border: none;
+        padding: 10px 20px;
+        font-weight: bold;
+    }}
+    .stTextInput>div>div>input {{
+        border: 1px solid {COLOR_ACCENT};
+        border-radius: 5px;
+        padding: 8px;
+    }}
     </style>
-    """, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True
+)
 
-# --- 2. SISTEMA DI ACCESSO (PASSWORD) ---
-def check_password():
-    if "password_correct" not in st.session_state:
-        st.markdown("<h2 style='text-align:center;'>Accesso Lab Supernova</h2>", unsafe_allow_html=True)
-        pwd = st.text_input("Inserisci Password Ingegneria", type="password")
-        if st.button("Entra"):
-            if pwd == "supernova2026": # CAMBIA QUESTA PASSWORD SE VUOI
-                st.session_state["password_correct"] = True
-                st.rerun()
-            else:
-                st.error("Password errata.")
-        return False
-    return True
+# --- Logo Supernova (Semplice, da migliorare con un'immagine) ---
+# Per un logo immagine: st.image("path/to/tuo_logo.png", width=100)
+st.markdown(
+    f"<h1 style='text-align: center; color: {COLOR_TEXT}; font-size: 2.5em;'><span style='color: {COLOR_ACCENT};'>Supernova</span> Performance Predictor ⚡</h1>", 
+    unsafe_allow_html=True
+)
+st.markdown(
+    f"<p style='text-align: center; color: {COLOR_ACCENT}; font-size: 1.2em;'><i>Decodifichiamo la fatica, ottimizziamo il picco.</i></p>", 
+    unsafe_allow_html=True
+)
 
-if check_password():
+st.write("---")
 
-    # --- 3. HEADER ---
-    st.markdown(f"<h1 style='text-align: center;'>SUPERNOVA <span style='color:{COLOR_GOLD}'>PREDICTOR</span> ⚡</h1>", unsafe_allow_html=True)
-    st.write("---")
+# --- Descrizione del Tool ---
+st.header("Analisi Predittiva della Degradaione Performance")
+st.markdown(
+    """
+    Questo strumento Supernova analizza la **variazione dei parametri di performance** su una serie di ripetizioni (es. colpi di golf, lanci). 
+    Utilizzando principi di **fatica ingegneristica** applicati al gesto biomeccanico,
+    prevediamo il punto oltre il quale la tua precisione e potenza iniziano a degradare significativamente.
+    """
+)
+st.warning("⚠️ **Nota:** I dati attuali sono simulati. L'accuratezza reale richiede dati biomeccanici e fisiologici specifici.")
 
-    # --- 4. INPUT DATI ---
-    st.sidebar.header("Parametri Analisi")
-    atleta = st.sidebar.text_input("Nome Atleta", "Atleta Alpha")
-    n_shots = st.sidebar.slider("Numero Ripetizioni", 10, 50, 25)
-    base_error = st.sidebar.slider("Errore Base (metri)", 0.5, 3.0, 1.2)
-    fatigue_rate = st.sidebar.slider("Tasso di Fatica", 0.01, 0.10, 0.04)
+# --- Input Dati Simulati ---
+st.subheader("Inserisci i tuoi Dati Simulati")
+num_ripetizioni = st.slider("Numero di ripetizioni (es. colpi, lanci)", 10, 100, 30)
+st.info(f"Simuliamo la performance su {num_ripetizioni} ripetizioni.")
 
-    # --- 5. GENERAZIONE DATI & GRAFICO ---
-    np.random.seed(42)
-    # Simulazione: l'errore aumenta con le ripetizioni + rumore casuale
-    errors = [base_error + (i * fatigue_rate) + np.random.normal(0, 0.2) for i in range(n_shots)]
-    df = pd.DataFrame({"Colpo": range(1, n_shots + 1), "Errore (m)": errors})
+# Generazione dati simulati
+np.random.seed(42) # Per risultati riproducibili
+deviazione_iniziale = st.number_input("Deviazione iniziale media (es. in metri dal target)", 0.5, 5.0, 1.5)
+degradazione_per_ripetizione = st.number_input("Tasso di degradazione per ripetizione (aumento deviazione)", 0.01, 0.1, 0.03)
 
-    st.subheader(f"Analisi Degradaione: {atleta}")
-    
-    # Creazione Grafico con Seaborn
-    fig, ax = plt.subplots(figsize=(8, 4))
-    fig.patch.set_facecolor(COLOR_BG)
-    ax.set_facecolor("#122a30")
-    
-    sns.lineplot(data=df, x="Colpo", y="Errore (m)", color=COLOR_GOLD, linewidth=2, marker='o', ax=ax)
-    
-    # Styling assi
-    ax.tick_params(colors=COLOR_TEXT)
-    ax.xaxis.label.set_color(COLOR_TEXT)
-    ax.yaxis.label.set_color(COLOR_TEXT)
-    for spine in ax.spines.values(): spine.set_edgecolor(COLOR_GOLD)
-    
-    st.pyplot(fig)
+# Calcolo della deviazione simulata
+deviazioni = np.linspace(deviazione_iniziale, 
+                         deviazione_iniziale + degradazione_per_ripetizione * num_ripetizioni, 
+                         num_ripetizioni)
+# Aggiungiamo un po' di rumore per realismo
+deviazioni += np.random.normal(0, deviazione_iniziale / 5, num_ripetizioni)
+df = pd.DataFrame({'Ripetizione': range(1, num_ripetizioni + 1), 'Deviazione (m)': deviazioni})
 
-    # --- 6. LOGICA DI CALCOLO PUNTO CRITICO ---
-    threshold = base_error * 1.5
-    critical_hit = df[df["Errore (m)"] > threshold]["Colpo"].min()
+# --- Visualizzazione ---
+st.subheader("Andamento della Performance")
+fig, ax = plt.subplots(figsize=(10, 5))
+sns.lineplot(x='Ripetizione', y='Deviazione (m)', data=df, ax=ax, color=COLOR_ACCENT)
+ax.set_title('Degradazione della Precisione nel Tempo', color=COLOR_TEXT)
+ax.set_xlabel('Numero di Ripetizioni', color=COLOR_TEXT)
+ax.set_ylabel('Deviazione dal Target (m)', color=COLOR_TEXT)
+ax.tick_params(axis='x', colors=COLOR_TEXT)
+ax.tick_params(axis='y', colors=COLOR_TEXT)
+ax.set_facecolor(COLOR_PRIMARY)
+fig.patch.set_facecolor(COLOR_PRIMARY)
+plt.grid(True, linestyle='--', alpha=0.6, color=COLOR_ACCENT)
+st.pyplot(fig)
 
-    if not pd.isna(critical_hit):
-        st.warning(f"⚠️ PUNTO CRITICO RILEVATO: Dopo il colpo {int(critical_hit)} la precisione decade oltre il 50%.")
-    else:
-        st.success("✅ Performance stabile per tutta la sessione.")
+# --- Analisi del Punto di Degradaione Critica ---
+st.subheader("Previsione del Punto Critico")
+soglia_degradazione = st.number_input(
+    "Soglia di accettabilità (es. se la deviazione supera X metri, la performance è degradata)", 
+    deviazione_iniziale + 0.5, 
+    deviazione_iniziale + degradazione_per_ripetizione * num_ripetizioni, 
+    deviazione_iniziale + degradazione_per_ripetizione * num_ripetizioni / 2
+)
 
-    # --- 7. GENERAZIONE PDF ---
-    def create_pdf(name, shots, crit):
-        # Salviamo il grafico come immagine temporanea
-        img_path = "temp_chart.png"
-        fig.savefig(img_path, dpi=150, bbox_inches='tight')
-        
-        pdf = FPDF()
-        pdf.add_page()
-        
-        # Header PDF
-        pdf.set_fill_color(11, 29, 34) # Teal Supernova
-        pdf.rect(0, 0, 210, 40, 'F')
-        pdf.set_font("Arial", 'B', 24)
-        pdf.set_text_color(212, 175, 55) # Oro
-        pdf.cell(0, 20, "SUPERNOVA R&D REPORT", ln=True, align='C')
-        
-        # Info Atleta
-        pdf.set_text_color(0, 0, 0)
-        pdf.set_font("Arial", 'B', 14)
-        pdf.ln(25)
-        pdf.cell(0, 10, f"Analisi Performance Atleta: {name}", ln=True)
-        pdf.set_font("Arial", '', 12)
-        pdf.cell(0, 10, f"Sessione di {shots} ripetizioni.", ln=True)
-        
-        # Inserimento Immagine Grafico
-        pdf.image(img_path, x=15, y=85, w=180)
-        
-        # Conclusioni
-        pdf.set_y(180)
-        pdf.set_font("Arial", 'B', 12)
-        msg = f"Soglia critica individuata al colpo: {int(crit)}" if not pd.isna(crit) else "Nessuna anomalia rilevata."
-        pdf.multi_cell(0, 10, f"RISULTATO TECNICO: {msg}")
-        
-        pdf_name = f"Report_{name}.pdf"
-        pdf.output(pdf_name)
-        return pdf_name
+punto_critico = df[df['Deviazione (m)'] > soglia_degradazione]['Ripetizione'].min()
 
-    # Bottone per scaricare
-    if st.button("Genera e Scarica Report PDF"):
-        file_path = create_pdf(atleta, n_shots, critical_hit)
-        with open(file_path, "rb") as f:
-            st.download_button(
-                label="Clicca qui per il download",
-                data=f,
-                file_name=file_path,
-                mime="application/pdf"
-            )
-        # Pulizia file temporanei
-        if os.path.exists("temp_chart.png"): os.remove("temp_chart.png")
+if not pd.isna(punto_critico):
+    st.markdown(
+        f"<h3 style='color: {COLOR_TEXT};'>Secondo l'analisi, la tua performance degrada significativamente dopo circa <span style='color: {COLOR_ACCENT}; font-size: 1.2em;'>{int(punto_critico)} ripetizioni.</span></h3>", 
+        unsafe_allow_html=True
+    )
+    st.info("Considera un intervallo di riposo o un cambio di focus tecnico dopo questo punto.")
+else:
+    st.success("La tua performance rientra sempre nei parametri accettabili!")
 
-    st.write("---")
-    st.caption("Supernova Lab © 2026 - Ingegneria Meccanica Applicata")
+st.write("---")
+st.markdown(
+    f"<p style='text-align: center; color: {COLOR_ACCENT};'>⚡ <a href='https://supernovalab.altervista.org' style='color: {COLOR_ACCENT}; text-decoration: none;'>Supernova R&D Lab</a> | Sports Engineering ⚡</p>",
+    unsafe_allow_html=True
+)
