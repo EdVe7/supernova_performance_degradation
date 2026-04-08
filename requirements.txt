@@ -1,5 +1,1 @@
-streamlit
-json
-os
-hashlib
-pathlib
+streamlit==1.44.1
