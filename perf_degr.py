@@ -1,145 +1,345 @@
+import datetime
+import hashlib
+import json
+import os
+from pathlib import Path
+
 import streamlit as st
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
-# Configurazione della pagina Streamlit
-st.set_page_config(
-    page_title="Supernova - Performance Predictor",
-    page_icon="⚡", # Puoi usare un'emoji o un percorso a un'immagine
-    layout="centered", # o "wide"
-    initial_sidebar_state="expanded"
-)
 
-# --- Colori e Stili (Ispirazione Supernova) ---
-# Verde scuro (Teal)
-COLOR_PRIMARY = "#0b1d22" 
-# Oro
-COLOR_ACCENT = "#d4af37" 
-# Bianco
-COLOR_TEXT = "#ffffff"
+# -----------------------------
+# UI / BRAND
+# -----------------------------
+GOLD_SN = "#D4AF37"
+APP_TITLE = "Supernova Dopamine Detox Diary"
+DB_FILE = Path("dopamine_users_db.json")
 
-# Stile custom per Streamlit (solo alcuni elementi, il resto è gestito dal tema)
-# Non è HTML puro, ma si inserisce in Streamlit con st.markdown
+st.set_page_config(page_title=APP_TITLE, page_icon="🧠", layout="wide")
 st.markdown(
-    f"""
+    """
     <style>
-    .reportview-container .main .block-container {{
-        max-width: 800px;
-        padding-top: 2rem;
-        padding-right: 2rem;
-        padding-left: 2rem;
-        padding-bottom: 2rem;
-    }}
-    .sidebar .sidebar-content {{
-        background-color: {COLOR_PRIMARY};
-        color: {COLOR_TEXT};
-    }}
-    h1, h2, h3, h4, h5, h6 {{
-        color: {COLOR_ACCENT};
-        font-family: 'Helvetica Neue', Arial, sans-serif;
-    }}
-    .stButton>button {{
-        background-color: {COLOR_ACCENT};
-        color: {COLOR_PRIMARY};
-        border-radius: 5px;
-        border: none;
-        padding: 10px 20px;
-        font-weight: bold;
-    }}
-    .stTextInput>div>div>input {{
-        border: 1px solid {COLOR_ACCENT};
-        border-radius: 5px;
-        padding: 8px;
-    }}
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stApp {background: linear-gradient(180deg, #FFFFFF 0%, #FFFBEF 75%, #F8EFCF 100%);}
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
-# --- Logo Supernova (Semplice, da migliorare con un'immagine) ---
-# Per un logo immagine: st.image("path/to/tuo_logo.png", width=100)
-st.markdown(
-    f"<h1 style='text-align: center; color: {COLOR_TEXT}; font-size: 2.5em;'><span style='color: {COLOR_ACCENT};'>Supernova</span> Performance Predictor ⚡</h1>", 
-    unsafe_allow_html=True
-)
-st.markdown(
-    f"<p style='text-align: center; color: {COLOR_ACCENT}; font-size: 1.2em;'><i>Decodifichiamo la fatica, ottimizziamo il picco.</i></p>", 
-    unsafe_allow_html=True
-)
 
-st.write("---")
+# -----------------------------
+# STORAGE HELPERS
+# -----------------------------
+def load_db() -> dict:
+    if not DB_FILE.exists():
+        return {"users": {}}
+    try:
+        with DB_FILE.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+            if "users" not in data:
+                data["users"] = {}
+            return data
+    except Exception:
+        return {"users": {}}
 
-# --- Descrizione del Tool ---
-st.header("Analisi Predittiva della Degradaione Performance")
-st.markdown(
-    """
-    Questo strumento Supernova analizza la **variazione dei parametri di performance** su una serie di ripetizioni (es. colpi di golf, lanci). 
-    Utilizzando principi di **fatica ingegneristica** applicati al gesto biomeccanico,
-    prevediamo il punto oltre il quale la tua precisione e potenza iniziano a degradare significativamente.
-    """
-)
-st.warning("⚠️ **Nota:** I dati attuali sono simulati. L'accuratezza reale richiede dati biomeccanici e fisiologici specifici.")
 
-# --- Input Dati Simulati ---
-st.subheader("Inserisci i tuoi Dati Simulati")
-num_ripetizioni = st.slider("Numero di ripetizioni (es. colpi, lanci)", 10, 100, 30)
-st.info(f"Simuliamo la performance su {num_ripetizioni} ripetizioni.")
+def save_db(db: dict) -> None:
+    with DB_FILE.open("w", encoding="utf-8") as f:
+        json.dump(db, f, ensure_ascii=False, indent=2)
 
-# Generazione dati simulati
-np.random.seed(42) # Per risultati riproducibili
-deviazione_iniziale = st.number_input("Deviazione iniziale media (es. in metri dal target)", 0.5, 5.0, 1.5)
-degradazione_per_ripetizione = st.number_input("Tasso di degradazione per ripetizione (aumento deviazione)", 0.01, 0.1, 0.03)
 
-# Calcolo della deviazione simulata
-deviazioni = np.linspace(deviazione_iniziale, 
-                         deviazione_iniziale + degradazione_per_ripetizione * num_ripetizioni, 
-                         num_ripetizioni)
-# Aggiungiamo un po' di rumore per realismo
-deviazioni += np.random.normal(0, deviazione_iniziale / 5, num_ripetizioni)
-df = pd.DataFrame({'Ripetizione': range(1, num_ripetizioni + 1), 'Deviazione (m)': deviazioni})
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
-# --- Visualizzazione ---
-st.subheader("Andamento della Performance")
-fig, ax = plt.subplots(figsize=(10, 5))
-sns.lineplot(x='Ripetizione', y='Deviazione (m)', data=df, ax=ax, color=COLOR_ACCENT)
-ax.set_title('Degradazione della Precisione nel Tempo', color=COLOR_TEXT)
-ax.set_xlabel('Numero di Ripetizioni', color=COLOR_TEXT)
-ax.set_ylabel('Deviazione dal Target (m)', color=COLOR_TEXT)
-ax.tick_params(axis='x', colors=COLOR_TEXT)
-ax.tick_params(axis='y', colors=COLOR_TEXT)
-ax.set_facecolor(COLOR_PRIMARY)
-fig.patch.set_facecolor(COLOR_PRIMARY)
-plt.grid(True, linestyle='--', alpha=0.6, color=COLOR_ACCENT)
-st.pyplot(fig)
 
-# Calcoliamo prima i limiti per sicurezza
-minimo_accettabile = deviazione_iniziale + 0.5
-massimo_accettabile = deviazione_iniziale + (degradazione_per_ripetizione * num_ripetizioni)
-proposta_default = deviazione_iniziale + (degradazione_per_ripetizione * num_ripetizioni / 2)
+def get_user(db: dict, username: str) -> dict | None:
+    return db["users"].get(username)
 
-# Il comando Streamlit corretto:
-soglia_degradazione = st.number_input(
-    "Soglia di accettabilità (m)",
-    min_value=float(minimo_accettabile),
-    max_value=float(massimo_accettabile),
-    value=float(max(minimo_accettabile, proposta_default)) # <--- Il Fix fondamentale
-)
 
-punto_critico = df[df['Deviazione (m)'] > soglia_degradazione]['Ripetizione'].min()
+def ensure_user_record(db: dict, username: str, password_hash: str) -> None:
+    if username not in db["users"]:
+        db["users"][username] = {
+            "password_hash": password_hash,
+            "privacy_accepted": False,
+            "profile": {},
+            "events": [],
+            "plans": [],
+        }
 
-if not pd.isna(punto_critico):
-    st.markdown(
-        f"<h3 style='color: {COLOR_TEXT};'>Secondo l'analisi, la tua performance degrada significativamente dopo circa <span style='color: {COLOR_ACCENT}; font-size: 1.2em;'>{int(punto_critico)} ripetizioni.</span></h3>", 
-        unsafe_allow_html=True
+
+# -----------------------------
+# DETOX ENGINE
+# -----------------------------
+EVENT_WEIGHTS = {
+    "Social media scroll": 30,
+    "Gaming compulsivo": 28,
+    "Binge video/serie": 25,
+    "Snack impulsivo": 15,
+    "Porno compulsivo": 35,
+    "Altro": 20,
+}
+
+
+def estimate_load(event_type: str, minutes: int, intensity: int) -> int:
+    base = EVENT_WEIGHTS.get(event_type, 20)
+    load = base + (minutes * 0.4) + (intensity * 4)
+    return int(min(max(load, 0), 100))
+
+
+def hobby_actions(hobbies: str, work_style: str) -> list[str]:
+    h = hobbies.lower()
+    actions = []
+    if "corsa" in h or "run" in h:
+        actions.append("20 minuti di corsa leggera a ritmo conversazionale.")
+    if "palestra" in h or "gym" in h:
+        actions.append("Sessione breve: 3 esercizi base con recuperi lunghi e zero telefono.")
+    if "lettura" in h or "libri" in h:
+        actions.append("25 minuti di lettura cartacea in ambiente silenzioso.")
+    if "musica" in h:
+        actions.append("15 minuti di ascolto attivo o pratica strumentale senza notifiche.")
+    if "cammin" in h:
+        actions.append("Camminata mindfulness di 20 minuti, solo respirazione e postura.")
+
+    if not actions:
+        actions.append("20 minuti di attività fisica moderata senza schermi.")
+        actions.append("15 minuti di journaling su carta: trigger, emozione, risposta.")
+
+    if "ufficio" in work_style.lower() or "computer" in work_style.lower():
+        actions.append("Deep work da 45 minuti con telefono in un'altra stanza.")
+    else:
+        actions.append("Blocco operativo da 45 minuti su priorità reale della giornata.")
+    return actions
+
+
+def build_plan(profile: dict, event: dict) -> dict:
+    load = estimate_load(event["event_type"], event["minutes"], event["intensity"])
+    actions = hobby_actions(profile.get("hobbies", ""), profile.get("work_style", ""))
+
+    if load < 35:
+        phase = "Reset leggero (2-4 ore)"
+        timeline = [
+            "0-30 min: idratazione + 10 respiri lenti.",
+            "30-90 min: task semplice ma utile (micro-obiettivo).",
+            "90-240 min: attività fisica breve + routine serale regolare.",
+        ]
+    elif load < 65:
+        phase = "Reset medio (12-24 ore)"
+        timeline = [
+            "0-2h: no social/notifiche, acqua, luce naturale.",
+            "2-8h: lavoro profondo in blocchi 45/10.",
+            "8-24h: allenamento o camminata + sonno anticipato.",
+        ]
+    else:
+        phase = "Reset profondo (24-72 ore)"
+        timeline = [
+            "0-6h: digital blackout selettivo (solo urgenze).",
+            "6-24h: routine minima: lavoro essenziale, movimento, pasti puliti.",
+            "24-72h: gradualità: reintroduzione schermi in finestre programmate.",
+        ]
+
+    return {
+        "created_at": datetime.datetime.now().isoformat(timespec="seconds"),
+        "event_summary": f"{event['event_type']} - {event['minutes']} min - intensita {event['intensity']}/10",
+        "dopamine_load": load,
+        "phase": phase,
+        "timeline": timeline,
+        "actions": actions[:5],
+    }
+
+
+# -----------------------------
+# SESSION STATE
+# -----------------------------
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "username" not in st.session_state:
+    st.session_state.username = ""
+
+
+# -----------------------------
+# HEADER
+# -----------------------------
+c_logo, c_title = st.columns([1, 4])
+with c_logo:
+    try:
+        st.image("logo.png", width=120)
+    except Exception:
+        st.markdown(f"<h2 style='color:{GOLD_SN};'>SUPERNOVA</h2>", unsafe_allow_html=True)
+with c_title:
+    st.title("🧠 Supernova Dopamine Detox Diary")
+    st.caption("Reset dopaminico personalizzato: timeline, compiti e progressione reale.")
+
+
+# -----------------------------
+# LOGIN / SIGNUP
+# -----------------------------
+db = load_db()
+
+if not st.session_state.authenticated:
+    st.subheader("🔐 Accesso Utente")
+    st.write("Crea o usa il tuo account. Username e password vengono salvati localmente.")
+    with st.form("login_form"):
+        username = st.text_input("Username", help="Nome univoco dell'account.")
+        password = st.text_input("Password", type="password", help="Minimo 6 caratteri consigliato.")
+        privacy_ok = st.checkbox(
+            "Accetto la Privacy Policy e il trattamento dati personali.",
+            help="Necessario per memorizzare profilo, eventi e piani detox.",
+        )
+        submit = st.form_submit_button("Entra / Registrati", use_container_width=True)
+
+    if submit:
+        username = username.strip()
+        if not username or not password:
+            st.error("Inserisci username e password.")
+            st.stop()
+        if not privacy_ok:
+            st.error("Devi accettare la privacy per continuare.")
+            st.stop()
+
+        pwd_hash = hash_password(password)
+        user = get_user(db, username)
+
+        if user is None:
+            ensure_user_record(db, username, pwd_hash)
+            db["users"][username]["privacy_accepted"] = True
+            save_db(db)
+            st.success("Account creato con successo.")
+        else:
+            if user["password_hash"] != pwd_hash:
+                st.error("Password non corretta.")
+                st.stop()
+            db["users"][username]["privacy_accepted"] = True
+            save_db(db)
+            st.success("Login eseguito.")
+
+        st.session_state.authenticated = True
+        st.session_state.username = username
+        st.rerun()
+
+    st.stop()
+
+
+# -----------------------------
+# APP CONTENT
+# -----------------------------
+username = st.session_state.username
+user_data = db["users"][username]
+
+with st.sidebar:
+    st.markdown(f"**Utente attivo:** `{username}`")
+    if st.button("Logout", use_container_width=True):
+        st.session_state.authenticated = False
+        st.session_state.username = ""
+        st.rerun()
+
+st.markdown("---")
+
+
+# One-time profile setup
+if not user_data.get("profile"):
+    st.subheader("👤 Setup Profilo (una volta sola)")
+    st.info("Completa il profilo: il software lo ricorderà automaticamente ai prossimi login.")
+    with st.form("profile_form"):
+        full_name = st.text_input("Nome e Cognome")
+        age = st.number_input("Età", min_value=12, max_value=99, value=30)
+        work_style = st.text_input("Lavoro / Studio", placeholder="Es: ufficio 8h al computer")
+        hobbies = st.text_area("Hobby / Interessi", placeholder="Es: corsa, musica, lettura")
+        sleep_hours = st.number_input("Ore medie di sonno", min_value=3.0, max_value=12.0, value=7.0, step=0.5)
+        submit_profile = st.form_submit_button("Salva Profilo", use_container_width=True)
+
+    if submit_profile:
+        if not full_name.strip() or not work_style.strip():
+            st.error("Compila almeno nome e lavoro/studio.")
+        else:
+            user_data["profile"] = {
+                "full_name": full_name.strip(),
+                "age": int(age),
+                "work_style": work_style.strip(),
+                "hobbies": hobbies.strip(),
+                "sleep_hours": float(sleep_hours),
+                "created_at": datetime.datetime.now().isoformat(timespec="seconds"),
+            }
+            save_db(db)
+            st.success("Profilo salvato. Da ora verra caricato automaticamente.")
+            st.rerun()
+    st.stop()
+
+
+profile = user_data["profile"]
+
+c1, c2 = st.columns([2, 1])
+with c1:
+    st.subheader(f"Benvenuto, {profile.get('full_name', username)}")
+    st.caption(f"Stile di vita: {profile.get('work_style', '-')}. Hobby: {profile.get('hobbies', '-')}.")
+with c2:
+    st.metric("Ore sonno medie", f"{profile.get('sleep_hours', 0):.1f} h")
+
+st.markdown("---")
+st.subheader("⚠️ Nuovo Evento Dopamina")
+
+with st.form("event_form"):
+    event_type = st.selectbox(
+        "Tipo evento",
+        list(EVENT_WEIGHTS.keys()),
+        help="Evento che ha creato sovrastimolazione dopaminica.",
     )
-    st.info("Considera un intervallo di riposo o un cambio di focus tecnico dopo questo punto.")
-else:
-    st.success("La tua performance rientra sempre nei parametri accettabili!")
+    minutes = st.slider(
+        "Durata evento (minuti)",
+        min_value=5,
+        max_value=300,
+        value=60,
+        step=5,
+        help="Tempo continuo speso nell'evento.",
+    )
+    intensity = st.slider(
+        "Intensità percepita (1-10)",
+        min_value=1,
+        max_value=10,
+        value=6,
+        help="Quanto il trigger ti ha agganciato mentalmente.",
+    )
+    note = st.text_area("Nota contestuale (opzionale)", placeholder="Es: stanchezza post lavoro, no allenamento.")
+    submit_event = st.form_submit_button("Genera Piano Detox", use_container_width=True)
 
-st.write("---")
-st.markdown(
-    f"<p style='text-align: center; color: {COLOR_ACCENT};'>⚡ <a href='https://supernovalab.altervista.org' style='color: {COLOR_ACCENT}; text-decoration: none;'>Supernova R&D Lab</a> | Sports Engineering ⚡</p>",
-    unsafe_allow_html=True
-)
+if submit_event:
+    event_data = {
+        "created_at": datetime.datetime.now().isoformat(timespec="seconds"),
+        "event_type": event_type,
+        "minutes": int(minutes),
+        "intensity": int(intensity),
+        "note": note.strip(),
+    }
+    plan = build_plan(profile, event_data)
+    user_data["events"].append(event_data)
+    user_data["plans"].append(plan)
+    save_db(db)
+    st.success("Piano detox generato e salvato.")
+
+
+if user_data["plans"]:
+    last_plan = user_data["plans"][-1]
+    st.markdown("---")
+    st.subheader("🧭 Piano Detox Personalizzato")
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Carico dopaminico", f"{last_plan['dopamine_load']}/100")
+    m2.metric("Fase consigliata", last_plan["phase"])
+    m3.metric("Piani salvati", str(len(user_data["plans"])))
+
+    st.markdown("**Timeline operativa**")
+    for t in last_plan["timeline"]:
+        st.write(f"- {t}")
+
+    st.markdown("**Compiti allineati al tuo stile di vita**")
+    for a in last_plan["actions"]:
+        st.write(f"- {a}")
+
+    st.caption("Nota: questo strumento non sostituisce un percorso medico o psicoterapeutico.")
+
+
+with st.expander("Storico eventi recenti"):
+    if not user_data["events"]:
+        st.write("Nessun evento registrato.")
+    else:
+        recent = user_data["events"][-10:][::-1]
+        st.dataframe(recent, use_container_width=True)
